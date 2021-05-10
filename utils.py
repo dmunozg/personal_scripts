@@ -74,10 +74,10 @@ class Function:
         ax.grid()
         plt.show()
 
-def parseXVG(xvgFile):
+def parseXVG(xvgFilename):
     """Lee un archivo XVG, y devuelve una lista con cada columna de datos presente en
     el archivo"""
-    sourceFile = open(xvgFile, "r")
+    sourceFile = open(xvgFilename, "r")
     columns = []
     for line in sourceFile:
         if line.startswith("#") or line.startswith("@"):
@@ -88,15 +88,15 @@ def parseXVG(xvgFile):
     sourceFile.close()
     return list(map(list, zip(*columns)))  # Esto transpone la lista de listas
 
-def xvg_to_dataframe(xvgFile):
+def xvg_to_dataframe(xvgFilename):
     """Returns a dataframe from a XVG file. The filename of the XVG file needs to be provided"""
-    dataColumns = parseXVG(xvgFile)
+    dataColumns = parseXVG(xvgFilename)
     columnNames = []
     if len(dataColumns) == 2:
         columnNamePattern = re.compile(r"@[\s]+title\s\"([\w]+)")
     else:
         columnNamePattern = re.compile(r"@\ss\d\slegend\s\"([\w\s]+)")
-    xvgFileData = open(xvgFile, "r")
+    xvgFileData = open(xvgFilename, "r")
     while len(columnNames) < (len(dataColumns) - 1):
         line = xvgFileData.readline()
         if line.startswith("#"):
@@ -106,7 +106,7 @@ def xvg_to_dataframe(xvgFile):
                 columnNames.append(columnNamePattern.findall(line)[0])
         else:
             xvgFileData.close()
-            logging.warning("Could not find enough matches in file {}".format(xvgFile))
+            logging.warning("Could not find enough matches in file {}".format(xvgFilename))
             logging.debug(
                 "{} of {} matches were found.".format(
                     len(columnNames), len(dataColumns) - 1
@@ -157,3 +157,58 @@ def calculate_enthalpy_plot(lowTempFunc, highTempFunc, deltaTemp, nPoints=200):
         )
     return Function([xValues, enthalpyValues])
 
+def show_umbrella_plot(profileFilename, histogramFilename):
+    """Muestra el gráfico del perfil y los histogramas en el mismo gráfico. Útil para determinar
+    si al cálculo le faltan ventanas."""
+    figure = plt.figure()
+
+    histogramsData = parseXVG(histogramFilename)
+    histoPlot = figure.add_subplot(111)
+    for histogramNum in range(1, len(histogramsData)):
+        histoPlot.fill_between(
+            histogramsData[0], 0, histogramsData[histogramNum], color="grey", alpha=0.35
+        )
+        histoPlot.set_xlabel("Distance from bilayer center [nm]")
+        histoPlot.set_ylabel("Population")
+
+    profileData = parseXVG(profileFilename)
+    profilePlot = figure.add_subplot(111, sharex=histoPlot, frameon=False)
+    profilePlot.plot(profileData[0], profileData[1])
+    profilePlot.yaxis.tick_right()
+    profilePlot.yaxis.set_label_position("right")
+    profilePlot.set_ylabel("Mean force potential [kj/mol]")
+    profilePlot.grid()
+    plt.show()
+
+def generate_tpr_list_file(path, tprListFile="tpr_files.dat"):
+    """Genera la lista de archivos TPR"""
+    windowsList = []
+    pattern = re.compile(r"umbrella([\w.]+).gro")
+    for file in os.listdir(path):
+        if pattern.match(file):
+            windowsList.append(pattern.findall(file)[0])
+    try:
+        os.remove(path + tprListFile)
+    except:
+        print("No previous tpr file found")
+    outputFile = open(path + tprListFile, "w+")
+    for window in windowsList:
+        print("umbrella" + window + ".tpr", file=outputFile)
+    outputFile.close()
+
+
+def generate_pullf_list_file(path, pullfListFile="pullf_files.dat"):
+    """Genera la lista de archivos pullf"""
+    windowsList = []
+    pattern = re.compile(r"umbrella([\w.]+).gro")
+    for file in os.listdir(path):
+        if pattern.match(file):
+            windowsList.append(pattern.findall(file)[0])
+    try:
+        os.remove(path + pullfListFile)
+    except:
+        print("No provious pullf list found")
+    outputFile = open(path + pullfListFile, "w+")
+    for window in windowsList:
+        print("pullf_umbrella" + window + ".xvg", file=outputFile)
+    outputFile.close()
