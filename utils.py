@@ -212,3 +212,11 @@ def generate_pullf_list_file(path, pullfListFile="pullf_files.dat"):
     for window in windowsList:
         print("pullf_umbrella" + window + ".xvg", file=outputFile)
     outputFile.close()
+
+def list_finished_runs(path=os.getcwd()):
+    windowsList = []
+    pattern = re.compile(r"umbrella([\w.]+).gro")
+    for file in os.listdir(path):
+        if pattern.match(file):
+            windowsList.append(pattern.match(file)[1])
+    return windowsList
