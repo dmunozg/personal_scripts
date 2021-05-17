@@ -74,51 +74,6 @@ class Function:
         ax.grid()
         plt.show()
 
-def parseXVG(xvgFilename):
-    """Lee un archivo XVG, y devuelve una lista con cada columna de datos presente en
-    el archivo"""
-    sourceFile = open(xvgFilename, "r")
-    columns = []
-    for line in sourceFile:
-        if line.startswith("#") or line.startswith("@"):
-            continue
-        lineContentStr = line.split()
-        lineContentFloat = list(map(float, lineContentStr))
-        columns.append(lineContentFloat)
-    sourceFile.close()
-    return list(map(list, zip(*columns)))  # Esto transpone la lista de listas
-
-def xvg_to_dataframe(xvgFilename):
-    """Returns a dataframe from a XVG file. The filename of the XVG file needs to be provided"""
-    dataColumns = parseXVG(xvgFilename)
-    columnNames = []
-    if len(dataColumns) == 2:
-        columnNamePattern = re.compile(r"@[\s]+title\s\"([\w]+)")
-    else:
-        columnNamePattern = re.compile(r"@\ss\d\slegend\s\"([\w\s]+)")
-    xvgFileData = open(xvgFilename, "r")
-    while len(columnNames) < (len(dataColumns) - 1):
-        line = xvgFileData.readline()
-        if line.startswith("#"):
-            continue
-        elif line.startswith("@"):
-            if columnNamePattern.match(line):
-                columnNames.append(columnNamePattern.findall(line)[0])
-        else:
-            xvgFileData.close()
-            logging.warning("Could not find enough matches in file {}".format(xvgFilename))
-            logging.debug(
-                "{} of {} matches were found.".format(
-                    len(columnNames), len(dataColumns) - 1
-                )
-            )
-            columnNames = [str(i + 1) for i in range(len(dataColumns) - 1)]
-            break
-    xvgFileData.close()
-    return pd.DataFrame(
-        list(zip(*dataColumns[1:])), columns=columnNames, index=dataColumns[0]
-    )
-
 def clean_gromacs_garbage(path=os.getcwd()):
     """Deletes backups left by Gromacs"""
     garbagePattern = re.compile(r"#([\w\d.]+)#")
@@ -220,3 +175,31 @@ def list_finished_runs(path=os.getcwd()):
         if pattern.match(file):
             windowsList.append(pattern.match(file)[1])
     return windowsList
+
+def xvg_to_dataframe(xvgFilename):
+    """Returns a dataframe from a XVG file. The filename of the XVG file needs to be provided"""
+    # Transformar el archivo xvg en un dataFrame
+    xvgArray = np.loadtxt(xvgFilename, comments=["#", "@"])
+    xvgDataFrame = pd.DataFrame(xvgArray)
+    xvgDataFrame = xvgDataFrame.set_index(0)
+    # Buscar el nombre de las columnas en el metadato del archivo xvg
+    columnNames = []
+    if len(xvgDataFrame.columns) == 1:
+        columnNamePattern = re.compile(r"@[\s]+title\s\"([\w]+)")
+    else:
+        columnNamePattern = re.compile(r"@\ss\d\slegend\s\"([\w\s]+)")
+    xvgFileData = open(xvgFilename, "r")
+    while len(columnNames) < (len(xvgDataFrame.columns)):
+        line = xvgFileData.readline()
+        if line.startswith("#"):
+            continue
+        elif line.startswith("@"):
+            if columnNamePattern.match(line):
+                columnNames.append(columnNamePattern.findall(line)[0])
+        else:
+            xvgFileData.close()
+            columnNames = [str(i + 1) for i in range(len(xvgDataFrame.columns))]
+            break
+    xvgFileData.close()
+    xvgDataFrame.columns = columnNames
+    return xvgDataFrame
