@@ -8,13 +8,11 @@ from scipy import interpolate
 
 
 class Function:
-    """Esta clase carga una función a partir de una disperción de datos ordenados.
-    Posee el método 'eval', que evalúa la función en cualquier número mientras
-    esté en el dominio de la función. Por ahora solo usa una interpolación lineal
-    para calcular el resultado.
-    Se debe inicializar con una tupla de listas de datos X e Y. e.g.:
+    """This class loads a function from a spread of sorted data.
+    It has the 'eval' method, which evaluates the function on any number as long as it is in the function domain. For now it only uses a linear interpolation to calculate the result.
+    It must be initialized with a tuple of X and Y data lists. e.g.:
 
-    funcion_de_prueba = Function( (listaDePuntosX, listaDePuntosY))"""
+    testFunction = Function( (pointsListX, pointsListY))"""
 
     def __init__(self, plotData, interpolator="linear"):
         self.interpolator = interpolator
@@ -46,8 +44,7 @@ class Function:
             return False
 
     def linear_interpol(self, xValue):
-        """Método de interpolación lineal, los interpoladores se deben escribir
-        de manera que sólo nececiten un valor X para producir un valor Y"""
+        """Linear interpolation method, the interpolators must be written in such a way that they only need one X value to produce one Y value."""
         # Encontrar los valores x0 y x1 mas cercanos a xValue y sus respectivas
         # imágenes
         index = 1
@@ -67,7 +64,7 @@ class Function:
         return interpolate.splev(xValue, self.splineRepresentation)
 
     def show(self, xLabel=None, yLabel=None):
-        """Grafica la función contenida"""
+        """Plots the contained function"""
         fig, ax = plt.subplots()
         ax.plot(self.xDataPoints, self.yDataPoints)
         ax.set(xlabel=xLabel, ylabel=yLabel)
@@ -83,8 +80,7 @@ def clean_gromacs_garbage(path=os.getcwd()):
             print(os.path.join(path, file), "removed")
 
 def get_overlap(function1, function2):
-    """Recibe dos objetos Function, y devuelve los límites inferior y superior en que
-    ambos dominios se superponen. Útil para generar una tercera función a partir de dos."""
+    """Receives two Function objects, and returns the lower and upper bounds where the two domains overlap. Useful for generating a third function from two."""
     if min(function1.xDataPoints) < min(function2.xDataPoints):
         xMin = min(function2.xDataPoints)
     else:
@@ -97,8 +93,7 @@ def get_overlap(function1, function2):
 
 
 def calculate_enthalpy_plot(lowTempFunc, highTempFunc, deltaTemp, nPoints=200):
-    """A partir de dos funciones de Energía libre a diferentes temperaturas produce una
-    función de entalpía para el mismo proceso"""
+    """From two free energy functions at different temperatures produce an enthalpy function for the same process."""
     xLowLimit, xHighLimit = get_overlap(lowTempFunc, highTempFunc)
     deltaX = (xHighLimit - xLowLimit) / nPoints
     xValues = []
@@ -113,8 +108,7 @@ def calculate_enthalpy_plot(lowTempFunc, highTempFunc, deltaTemp, nPoints=200):
     return Function([xValues, enthalpyValues])
 
 def show_umbrella_plot(profileFilename, histogramFilename):
-    """Muestra el gráfico del perfil y los histogramas en el mismo gráfico. Útil para determinar
-    si al cálculo le faltan ventanas."""
+    """Displays the profile graph and histograms on the same graph. Useful to determine if the calculation is missing windows."""
     figure = plt.figure()
 
     histogramsData = parseXVG(histogramFilename)
@@ -136,7 +130,7 @@ def show_umbrella_plot(profileFilename, histogramFilename):
     plt.show()
 
 def generate_tpr_list_file(path, tprListFile="tpr_files.dat"):
-    """Genera la lista de archivos TPR"""
+    """Generates a tpr_files.dat file which contains every tpr file in the directory. Useful for umbrella sampling with GROMACS."""
     windowsList = []
     pattern = re.compile(r"umbrella([\w.]+).gro")
     for file in os.listdir(path):
@@ -153,7 +147,7 @@ def generate_tpr_list_file(path, tprListFile="tpr_files.dat"):
 
 
 def generate_pullf_list_file(path, pullfListFile="pullf_files.dat"):
-    """Genera la lista de archivos pullf"""
+    """Generates a pullf_files.dat file which contains every pullf file in the directory. Useful for umbrella sampling with GROMACS."""
     windowsList = []
     pattern = re.compile(r"umbrella([\w.]+).gro")
     for file in os.listdir(path):

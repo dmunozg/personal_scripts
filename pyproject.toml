@@ -1,0 +1,20 @@
+[metadata]
+name = "md-scripts_dmunozg"
+version = "0.0.1"
+authors = [
+    { name="Diego Muñoz G.", email="diego.munoz.g@uchile.cl"}
+]
+description = "Collection of useful scripts for analysis of MD simulation results"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Bio-Informatics"
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
