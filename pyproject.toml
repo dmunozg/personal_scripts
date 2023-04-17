@@ -1,5 +1,5 @@
 [project]
-name = "md-scripts_dmunozg"
+name = "mdscripts_dmunozg"
 version = "0.0.1"
 authors = [
     { name="Diego Muñoz G.", email="diego.munoz.g@uchile.cl"}
