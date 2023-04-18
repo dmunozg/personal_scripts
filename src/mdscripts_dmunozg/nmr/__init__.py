@@ -13,8 +13,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import nmrglue as ng
 
-def bruker_to_pd(fidDirectory, autoPhase=False) -> pd.DataFrame:
-    # read the fid file
+def bruker_to_pd(fidDirectory, autoPhase=False, autoPhaseMethod="peak_minima", lineBroadening=20) -> pd.DataFrame:
+    """
+    Transform a Bruker NMR spectrum into a pandas DataFrame.
+    Optional parameter:
+        autoPhase: Boolean to indicate if the phase correction should be done automatically. Otherwise, the phase correction is done using the PHC0 and PHC1 parameters set by the technician.
+        autoPhaseMethod: String with the method to use for the automatic phase correction. See the nmrglue documentation for more information.
+        lineBroadening: Float with the line broadening to use for the apodization. The value is in Hz.
+    Returns a pandas DataFrame with the spectrum
+    """
+    # read the fid folder
     dic, data = ng.bruker.read(fidDirectory)
     procData = ng.bruker.remove_digital_filter(dic, data)
     # zero fill the fid function
@@ -22,16 +30,19 @@ def bruker_to_pd(fidDirectory, autoPhase=False) -> pd.DataFrame:
     procData = ng.proc_base.zf_size(procData, dataSize)
     # Apodize the fid function
     # TODO: Line broadening should be a parameter
-    procData = ng.proc_base.em(procData, lb=20/1e4)
+    procData = ng.proc_base.em(procData, lb=lineBroadening/1e4)
     # Fourier transform the fid function
     procData = ng.proc_base.fft(procData)
     # Apply phase correction
+    zerothCorrection = float(dic["procs"]["PHC0"])
+    firstCorrection = float(dic["procs"]["PHC1"])
     if autoPhase:
-        procData = ng.proc_autophase.autops(procData, "peak_minima")
+        procData = ng.proc_autophase.autops(procData,
+        fn=autoPhaseMethod,
+        p0=zerothCorrection,
+        p1=firstCorrection)
         pass
     else:
-        zerothCorrection = dic["procs"]["PHC0"]
-        firstCorrection = dic["procs"]["PHC1"]
         procData = ng.proc_base.ps(procData, zerothCorrection, firstCorrection)
     # Delete imaginary part
     procData = ng.proc_base.di(procData)

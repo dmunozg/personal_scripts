@@ -3,6 +3,7 @@
 
 import os
 import re
+import matplotlib.pyplot as plt
 import pandas as pd
 from scipy import interpolate
 
